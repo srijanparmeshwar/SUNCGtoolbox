@@ -126,14 +126,14 @@ ReadScene(char *filename)
 	// Allocate scene
 	scene = new R3Scene();
 	if (!scene) {
-	fprintf(stderr, "Unable to allocate scene for %s\n", filename);
-	return NULL;
+		fprintf(stderr, "Unable to allocate scene for %s\n", filename);
+		return NULL;
 	}
 
 	// Read scene from file
 	if (!scene->ReadFile(filename)) {
-	delete scene;
-	return NULL;
+		delete scene;
+		return NULL;
 	}
 
 	// Remove references and transformations
@@ -142,81 +142,81 @@ ReadScene(char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Read scene from %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Nodes = %d\n", scene->NNodes());
-	printf("  # Lights = %d\n", scene->NLights());
-	printf("  # Materials = %d\n", scene->NMaterials());
-	printf("  # Brdfs = %d\n", scene->NBrdfs());
-	printf("  # Textures = %d\n", scene->NTextures());
-	printf("  # Referenced models = %d\n", scene->NReferencedScenes());
-	fflush(stdout);
+		printf("Read scene from %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Nodes = %d\n", scene->NNodes());
+		printf("  # Lights = %d\n", scene->NLights());
+		printf("  # Materials = %d\n", scene->NMaterials());
+		printf("  # Brdfs = %d\n", scene->NBrdfs());
+		printf("  # Textures = %d\n", scene->NTextures());
+		printf("  # Referenced models = %d\n", scene->NReferencedScenes());
+		fflush(stdout);
+		}
+
+		// Return scene
+		return scene;
 	}
 
-	// Return scene
-	return scene;
-}
 
 
+	static int
+	ReadCategories(const char *filename)
+	{
+		// Start statistics
+		RNTime start_time;
+		start_time.Read();
 
-static int
-ReadCategories(const char *filename)
-{
-	// Start statistics
-	RNTime start_time;
-	start_time.Read();
+		// Read file
+		if (!scene->ReadSUNCGModelFile(filename)) return 0;
 
-	// Read file
-	if (!scene->ReadSUNCGModelFile(filename)) return 0;
+		// Print statistics
+		if (print_verbose) {
+		printf("Read categories from %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		fflush(stdout);
+		}
 
-	// Print statistics
-	if (print_verbose) {
-	printf("Read categories from %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	fflush(stdout);
+		// Return success
+		return 1;
 	}
 
-	// Return success
-	return 1;
-}
 
 
+	static int
+	ReadCameras(const char *filename)
+	{
+		// Start statistics
+		RNTime start_time;
+		start_time.Read();
+		int camera_count = 0;
 
-static int
-ReadCameras(const char *filename)
-{
-	// Start statistics
-	RNTime start_time;
-	start_time.Read();
-	int camera_count = 0;
+		// Get useful variables
+		RNScalar neardist = 0.01 * scene->BBox().DiagonalRadius();
+		RNScalar fardist = 100 * scene->BBox().DiagonalRadius();
+		RNScalar aspect = (RNScalar) height / (RNScalar) width;
 
-	// Get useful variables
-	RNScalar neardist = 0.01 * scene->BBox().DiagonalRadius();
-	RNScalar fardist = 100 * scene->BBox().DiagonalRadius();
-	RNScalar aspect = (RNScalar) height / (RNScalar) width;
+		// Open file
+		FILE *fp = fopen(filename, "r");
+		if (!fp) {
+		fprintf(stderr, "Unable to open cameras file %s\n", filename);
+		return 0;
+		}
 
-	// Open file
-	FILE *fp = fopen(filename, "r");
-	if (!fp) {
-	fprintf(stderr, "Unable to open cameras file %s\n", filename);
-	return 0;
-	}
-
-	// Read file
-	RNScalar vx, vy, vz, tx, ty, tz, ux, uy, uz, xf, yf, value;
-	while (fscanf(fp, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf", &vx, &vy, &vz, &tx, &ty, &tz, &ux, &uy, &uz, &xf, &yf, &value) == (unsigned int) 12) {
-	R3Point viewpoint(vx, vy, vz);
-	R3Vector towards(tx, ty, tz);
-	R3Vector up(ux, uy, uz);
-	R3Vector right = towards % up;
-	towards.Normalize();
-	up = right % towards;
-	up.Normalize();
-	yf = atan(aspect * tan(xf));
-	Camera *camera = new Camera(viewpoint, towards, up, xf, yf, neardist, fardist);
-	camera->SetValue(value);
-	cameras.Insert(camera);
-	camera_count++;
+		// Read file
+		RNScalar vx, vy, vz, tx, ty, tz, ux, uy, uz, xf, yf, value;
+		while (fscanf(fp, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf", &vx, &vy, &vz, &tx, &ty, &tz, &ux, &uy, &uz, &xf, &yf, &value) == (unsigned int) 12) {
+		R3Point viewpoint(vx, vy, vz);
+		R3Vector towards(tx, ty, tz);
+		R3Vector up(ux, uy, uz);
+		R3Vector right = towards % up;
+		towards.Normalize();
+		up = right % towards;
+		up.Normalize();
+		yf = atan(aspect * tan(xf));
+		Camera *camera = new Camera(viewpoint, towards, up, xf, yf, neardist, fardist);
+		camera->SetValue(value);
+		cameras.Insert(camera);
+		camera_count++;
 	}
 
 	// Close file
@@ -224,10 +224,10 @@ ReadCameras(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Read cameras from %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", camera_count);
-	fflush(stdout);
+		printf("Read cameras from %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", camera_count);
+		fflush(stdout);
 	}
 
 	// Return success
@@ -246,22 +246,22 @@ WriteCameras(const char *filename)
 	// Open file
 	FILE *fp = fopen(filename, "w");
 	if (!fp) {
-	fprintf(stderr, "Unable to open cameras file %s\n", filename);
-	return 0;
+		fprintf(stderr, "Unable to open cameras file %s\n", filename);
+		return 0;
 	}
 
 	// Write file
 	for (int i = 0; i < cameras.NEntries(); i++) {
-	Camera *camera = cameras.Kth(i);
-	R3Point eye = camera->Origin();
-	R3Vector towards = camera->Towards();
-	R3Vector up = camera->Up();
-	fprintf(fp, "%g %g %g  %g %g %g  %g %g %g  %g %g  %g\n",
-		eye.X(), eye.Y(), eye.Z(),
-		towards.X(), towards.Y(), towards.Z(),
-		up.X(), up.Y(), up.Z(),
-		camera->XFOV(), camera->YFOV(),
-		camera->Value());
+		Camera *camera = cameras.Kth(i);
+		R3Point eye = camera->Origin();
+		R3Vector towards = camera->Towards();
+		R3Vector up = camera->Up();
+		fprintf(fp, "%g %g %g  %g %g %g  %g %g %g  %g %g  %g\n",
+			eye.X(), eye.Y(), eye.Z(),
+			towards.X(), towards.Y(), towards.Z(),
+			up.X(), up.Y(), up.Z(),
+			camera->XFOV(), camera->YFOV(),
+			camera->Value());
 	}
 
 	// Close file
@@ -269,10 +269,10 @@ WriteCameras(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Wrote cameras to %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", cameras.NEntries());
-	fflush(stdout);
+		printf("Wrote cameras to %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", cameras.NEntries());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -291,19 +291,19 @@ WriteCameraExtrinsics(const char *filename)
 	// Open file
 	FILE *fp = fopen(filename, "w");
 	if (!fp) {
-	fprintf(stderr, "Unable to open camera extrinsics file %s\n", filename);
-	return 0;
+		fprintf(stderr, "Unable to open camera extrinsics file %s\n", filename);
+		return 0;
 	}
 
 	// Write file
 	for (int i = 0; i < cameras.NEntries(); i++) {
-	Camera *camera = cameras.Kth(i);
-	const R3CoordSystem& cs = camera->CoordSystem();
-	R4Matrix matrix = cs.Matrix();
-	fprintf(fp, "%g %g %g %g   %g %g %g %g  %g %g %g %g\n",
-		matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3],
-		matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
-		matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3]);
+		Camera *camera = cameras.Kth(i);
+		const R3CoordSystem& cs = camera->CoordSystem();
+		R4Matrix matrix = cs.Matrix();
+		fprintf(fp, "%g %g %g %g   %g %g %g %g  %g %g %g %g\n",
+			matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3],
+			matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
+			matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3]);
 	}
 
 	// Close file
@@ -311,10 +311,10 @@ WriteCameraExtrinsics(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Wrote camera extrinsics to %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", cameras.NEntries());
-	fflush(stdout);
+		printf("Wrote camera extrinsics to %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", cameras.NEntries());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -333,8 +333,8 @@ WriteCameraIntrinsics(const char *filename)
 	// Open file
 	FILE *fp = fopen(filename, "w");
 	if (!fp) {
-	fprintf(stderr, "Unable to open camera intrinsics file %s\n", filename);
-	return 0;
+		fprintf(stderr, "Unable to open camera intrinsics file %s\n", filename);
+		return 0;
 	}
 
 	// Get center of image
@@ -343,10 +343,10 @@ WriteCameraIntrinsics(const char *filename)
 
 	// Write file
 	for (int i = 0; i < cameras.NEntries(); i++) {
-	Camera *camera = cameras.Kth(i);
-	RNScalar fx = 0.5 * width / atan(camera->XFOV());
-	RNScalar fy = 0.5 * height / atan(camera->YFOV());
-	fprintf(fp, "%g 0 %g   0 %g %g  0 0 1\n", fx, cx, fy, cy);
+		Camera *camera = cameras.Kth(i);
+		RNScalar fx = 0.5 * width / atan(camera->XFOV());
+		RNScalar fy = 0.5 * height / atan(camera->YFOV());
+		fprintf(fp, "%g 0 %g   0 %g %g  0 0 1\n", fx, cx, fy, cy);
 	}
 
 	// Close file
@@ -354,9 +354,9 @@ WriteCameraIntrinsics(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Wrote camera intrinsics to %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	fflush(stdout);
+		printf("Wrote camera intrinsics to %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -375,14 +375,14 @@ WriteCameraNames(const char *filename)
 	// Open file
 	FILE *fp = fopen(filename, "w");
 	if (!fp) {
-	fprintf(stderr, "Unable to open camera names file %s\n", filename);
-	return 0;
+		fprintf(stderr, "Unable to open camera names file %s\n", filename);
+		return 0;
 	}
 
 	// Write file
 	for (int i = 0; i < cameras.NEntries(); i++) {
-	Camera *camera = cameras.Kth(i);
-	fprintf(fp, "%s\n", (camera->name) ? camera->name : "-");
+		Camera *camera = cameras.Kth(i);
+		fprintf(fp, "%s\n", (camera->name) ? camera->name : "-");
 	}
 
 	// Close file
@@ -390,9 +390,9 @@ WriteCameraNames(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Wrote camera names to %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	fflush(stdout);
+		printf("Wrote camera names to %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -417,9 +417,9 @@ WriteNodeNames(const char *filename)
 
 	// Write file
 	for (int i = 0; i < scene->NNodes(); i++) {
-	R3SceneNode *node = scene->Node(i);
-	const char *name = (node->Name()) ? node->Name() : "-";
-	fprintf(fp, "%d %s\n", i+1, name);
+		R3SceneNode *node = scene->Node(i);
+		const char *name = (node->Name()) ? node->Name() : "-";
+		fprintf(fp, "%d %s\n", i+1, name);
 	}
 
 	// Close file
@@ -427,10 +427,10 @@ WriteNodeNames(const char *filename)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Wrote node names to %s ...\n", filename);
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Nodes = %d\n", scene->NNodes());
-	fflush(stdout);
+		printf("Wrote node names to %s ...\n", filename);
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Nodes = %d\n", scene->NNodes());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -444,27 +444,27 @@ WriteCameras(void)
 {
 	// Write cameras
 	if (output_cameras_filename) {
-	if (!WriteCameras(output_cameras_filename)) exit(-1);
+		if (!WriteCameras(output_cameras_filename)) exit(-1);
 	}
 
 	// Write camera extrinsics
 	if (output_camera_extrinsics_filename) {
-	if (!WriteCameraExtrinsics(output_camera_extrinsics_filename)) exit(-1);
+		if (!WriteCameraExtrinsics(output_camera_extrinsics_filename)) exit(-1);
 	}
 
 	// Write camera intrinsics
 	if (output_camera_intrinsics_filename) {
-	if (!WriteCameraIntrinsics(output_camera_intrinsics_filename)) exit(-1);
+		if (!WriteCameraIntrinsics(output_camera_intrinsics_filename)) exit(-1);
 	}
 
 	// Write camera names
 	if (output_camera_names_filename) {
-	if (!WriteCameraNames(output_camera_names_filename)) exit(-1);
+		if (!WriteCameraNames(output_camera_names_filename)) exit(-1);
 	}
 
 	// Write node names
 	if (output_nodes_filename) {
-	if (!WriteNodeNames(output_nodes_filename)) exit(-1);
+		if (!WriteNodeNames(output_nodes_filename)) exit(-1);
 	}
 
 	// Return success
@@ -501,13 +501,13 @@ CaptureScalar(R2Grid& scalar_image)
 	// Fill scalar image
 	unsigned char *pixelp = pixels;
 	for (int iy = 0; iy < height; iy++) {
-	for (int ix = 0; ix < width; ix++) {
-		unsigned int value = 0;
-		value |= (*pixelp++ << 16) & 0xFF0000;
-		value |= (*pixelp++ <<  8) & 0x00FF00;
-		value |= (*pixelp++      ) & 0x0000FF;
-		scalar_image.SetGridValue(ix, iy, value);
-	}
+		for (int ix = 0; ix < width; ix++) {
+			unsigned int value = 0;
+			value |= (*pixelp++ << 16) & 0xFF0000;
+			value |= (*pixelp++ <<  8) & 0x00FF00;
+			value |= (*pixelp++      ) & 0x0000FF;
+			scalar_image.SetGridValue(ix, iy, value);
+		}
 	}
 
 	// Delete rgb pixels
@@ -580,35 +580,35 @@ DrawNodeWithOpenGL(R3Scene *scene, R3SceneNode *node, R3SceneNode *selected_node
 	// Set color based on node index
 	RNFlags draw_flags = R3_DEFAULT_DRAW_FLAGS;
 	if (image_type == NODE_INDEX_IMAGE) {
-	draw_flags = R3_SURFACES_DRAW_FLAG;
-	unsigned int node_index = node->SceneIndex() + 1;
-	unsigned char color[4];
-	color[0] = (node_index >> 16) & 0xFF;
-	color[1] = (node_index >>  8) & 0xFF;
-	color[2] = (node_index      ) & 0xFF;
-	glColor3ubv(color);
+		draw_flags = R3_SURFACES_DRAW_FLAG;
+		unsigned int node_index = node->SceneIndex() + 1;
+		unsigned char color[4];
+		color[0] = (node_index >> 16) & 0xFF;
+		color[1] = (node_index >>  8) & 0xFF;
+		color[2] = (node_index      ) & 0xFF;
+		glColor3ubv(color);
 	}
 
 	// Draw elements
 	if (!selected_node || (selected_node == node)) {
-	for (int i = 0; i < node->NElements(); i++) {
-		R3SceneElement *element = node->Element(i);
-		element->Draw(draw_flags);
-	}
+		for (int i = 0; i < node->NElements(); i++) {
+			R3SceneElement *element = node->Element(i);
+			element->Draw(draw_flags);
+		}
 	}
 
 	// Draw references
 	if (!selected_node || (selected_node == node)) {
-	for (int i = 0; i < node->NReferences(); i++) {
-		R3SceneReference *reference = node->Reference(i);
-		reference->Draw(draw_flags);
-	}
+		for (int i = 0; i < node->NReferences(); i++) {
+			R3SceneReference *reference = node->Reference(i);
+			reference->Draw(draw_flags);
+		}
 	}
 
 	// Draw children
 	for (int i = 0; i < node->NChildren(); i++) {
-	R3SceneNode *child = node->Child(i);
-	DrawNodeWithOpenGL(scene, child, selected_node, image_type);
+		R3SceneNode *child = node->Child(i);
+		DrawNodeWithOpenGL(scene, child, selected_node, image_type);
 	}
 }
 
@@ -664,19 +664,19 @@ RenderImageWithRayCasting(R2Grid& image, const R3Camera& camera, R3Scene *scene,
 
 	// Render image with ray casting
 	for (int iy = 0; iy < image.YResolution(); iy++) {
-	for (int ix = 0; ix < image.XResolution(); ix++) {
-		R3Ray ray = viewer.WorldRay(ix, iy);
-		R3SceneNode *intersection_node = NULL;
-		if (root_node->Intersects(ray, &intersection_node)) {
-		if (intersection_node) {
-			if (!selected_node || (selected_node == intersection_node)) {
-			if (image_type == NODE_INDEX_IMAGE) {
-				image.SetGridValue(ix, iy, intersection_node->SceneIndex());
-			}
+		for (int ix = 0; ix < image.XResolution(); ix++) {
+			R3Ray ray = viewer.WorldRay(ix, iy);
+			R3SceneNode *intersection_node = NULL;
+			if (root_node->Intersects(ray, &intersection_node)) {
+				if (intersection_node) {
+					if (!selected_node || (selected_node == intersection_node)) {
+						if (image_type == NODE_INDEX_IMAGE) {
+							image.SetGridValue(ix, iy, intersection_node->SceneIndex());
+						}
+					}
+				}
 			}
 		}
-		}
-	}
 	}
 }
 
@@ -712,13 +712,13 @@ IsObject(R3SceneNode *node)
 	R3SceneNode *ancestor = node;
 	const char *category_identifier = NULL;
 	while (!category_identifier && ancestor) {
-	category_identifier = node->Info("empty_struct_obj");
-	ancestor = ancestor->Parent();
+		category_identifier = node->Info("empty_struct_obj");
+		ancestor = ancestor->Parent();
 	}
 
 	// Check category identifier
 	if (category_identifier) {
-	if (strcmp(category_identifier, "2")) return 0;
+		if (strcmp(category_identifier, "2")) return 0;
 	}
 
 	// Passed all tests
@@ -748,9 +748,9 @@ ObjectCoverageScore(const R3Camera& camera, R3Scene *scene, R3SceneNode *node)
 	for (int j = 0; j < node->NElements(); j++) {
 		R3SceneElement *element = node->Element(j);
 		for (int k = 0; k < element->NShapes(); k++) {
-		R3Shape *shape = element->Shape(k);
-		RNScalar area = shape->Area();
-		total_area += area;
+			R3Shape *shape = element->Shape(k);
+			RNScalar area = shape->Area();
+			total_area += area;
 		}
 	}
 
@@ -770,11 +770,11 @@ ObjectCoverageScore(const R3Camera& camera, R3Scene *scene, R3SceneNode *node)
 			RNScalar real_nsamples = target_npoints * area / total_area;
 			int nsamples = (int) real_nsamples;
 			if (RNRandomScalar() < (real_nsamples - nsamples)) nsamples++;
-			for (int m = 0; m < nsamples; m++) {
-				if (npoints >= max_npoints) break;
-				R3Point point = triangle->RandomPoint();
-				points[npoints++] = point;
-			}
+				for (int m = 0; m < nsamples; m++) {
+					if (npoints >= max_npoints) break;
+					R3Point point = triangle->RandomPoint();
+					points[npoints++] = point;
+				}
 			}
 		}
 		}
@@ -787,15 +787,15 @@ ObjectCoverageScore(const R3Camera& camera, R3Scene *scene, R3SceneNode *node)
 	// Count how many points are visible
 	int nvisible = 0;
 	for (int i = 0; i < npoints; i++) {
-	const R3Point& point = points[i];
-	R3Ray ray(camera.Origin(), point);
-	const RNScalar tolerance_t = 0.01;
-	RNScalar max_t = R3Distance(camera.Origin(), point) + tolerance_t;
-	RNScalar hit_t = FLT_MAX;
-	R3SceneNode *hit_node = NULL;
-	if (scene->Intersects(ray, &hit_node, NULL, NULL, NULL, NULL, &hit_t, 0, max_t)) {
-		if ((hit_node == node) && (RNIsEqual(hit_t, max_t, tolerance_t))) nvisible++;
-	}
+		const R3Point& point = points[i];
+		R3Ray ray(camera.Origin(), point);
+		const RNScalar tolerance_t = 0.01;
+		RNScalar max_t = R3Distance(camera.Origin(), point) + tolerance_t;
+		RNScalar hit_t = FLT_MAX;
+		R3SceneNode *hit_node = NULL;
+		if (scene->Intersects(ray, &hit_node, NULL, NULL, NULL, NULL, &hit_t, 0, max_t)) {
+			if ((hit_node == node) && (RNIsEqual(hit_t, max_t, tolerance_t))) nvisible++;
+		}
 	}
 
 	// Compute score as fraction of points that are visible
@@ -830,23 +830,23 @@ SceneCoverageScore(const R3Camera& camera, R3Scene *scene, R3SceneNode *room_nod
 
 	// Log counts of pixels visible on each node
 	for (int i = 0; i < image.NEntries(); i++) {
-	RNScalar value = image.GridValue(i);
-	if (value == R2_GRID_UNKNOWN_VALUE) continue;
-	int node_index = (int) (value + 0.5);
-	if ((node_index < 0) || (node_index >= scene->NNodes())) continue;
-	node_pixel_counts[node_index]++;
+		RNScalar value = image.GridValue(i);
+		if (value == R2_GRID_UNKNOWN_VALUE) continue;
+		int node_index = (int) (value + 0.5);
+		if ((node_index < 0) || (node_index >= scene->NNodes())) continue;
+		node_pixel_counts[node_index]++;
 	}
 
 	// Compute score
 	RNScalar sum = 0;
 	int node_count = 0;
 	for (int i = 0; i < scene->NNodes(); i++) {
-	R3SceneNode *node = scene->Node(i);
-	if (!IsObject(node)) continue;
-	if (room_node && !node->IsDecendent(room_node)) continue;
-	if (node_pixel_counts[i] <= min_pixel_count_per_object) continue;
-	sum += log(node_pixel_counts[i] / min_pixel_count_per_object);
-	node_count++;
+		R3SceneNode *node = scene->Node(i);
+		if (!IsObject(node)) continue;
+		if (room_node && !node->IsDecendent(room_node)) continue;
+		if (node_pixel_counts[i] <= min_pixel_count_per_object) continue;
+		sum += log(node_pixel_counts[i] / min_pixel_count_per_object);
+		node_count++;
 	}
 
 	// Compute score (log of product of number of pixels visible in each object)
@@ -875,39 +875,39 @@ RasterizeIntoZXGrid(R2Grid& grid, R3SceneNode *node,
 
 	// Rasterize elements into grid
 	for (int j = 0; j < node->NElements(); j++) {
-	R3SceneElement *element = node->Element(j);
-	for (int k = 0; k < element->NShapes(); k++) {
-		R3Shape *shape = element->Shape(k);
-		R3Box shape_bbox = shape->BBox();
-		if (!R3Intersects(world_bbox, shape_bbox)) continue;
-		if (shape->ClassID() == R3TriangleArray::CLASS_ID()) {
-		R3TriangleArray *triangles = (R3TriangleArray *) shape;
-		for (int m = 0; m < triangles->NTriangles(); m++) {
-			R3Triangle *triangle = triangles->Triangle(m);
-			R3Box triangle_bbox = triangle->BBox();
-			if (!R3Intersects(world_bbox, triangle_bbox)) continue;
-			R3TriangleVertex *v0 = triangle->V0();
-			R3Point vp0 = v0->Position();
-			R2Point p0(vp0.Z(), vp0.X());
-			if (!R2Contains(grid.WorldBox(), p0)) continue;
-			R3TriangleVertex *v1 = triangle->V1();
-			R3Point vp1 = v1->Position();
-			R2Point p1(vp1.Z(), vp1.X());
-			if (!R2Contains(grid.WorldBox(), p1)) continue;
-			R3TriangleVertex *v2 = triangle->V2();
-			R3Point vp2 = v2->Position();
-			R2Point p2(vp2.Z(), vp2.X());
-			if (!R2Contains(grid.WorldBox(), p2)) continue;
-			grid.RasterizeWorldTriangle(p0, p1, p2, 1.0);
+		R3SceneElement *element = node->Element(j);
+		for (int k = 0; k < element->NShapes(); k++) {
+			R3Shape *shape = element->Shape(k);
+			R3Box shape_bbox = shape->BBox();
+			if (!R3Intersects(world_bbox, shape_bbox)) continue;
+			if (shape->ClassID() == R3TriangleArray::CLASS_ID()) {
+				R3TriangleArray *triangles = (R3TriangleArray *) shape;
+				for (int m = 0; m < triangles->NTriangles(); m++) {
+					R3Triangle *triangle = triangles->Triangle(m);
+					R3Box triangle_bbox = triangle->BBox();
+					if (!R3Intersects(world_bbox, triangle_bbox)) continue;
+					R3TriangleVertex *v0 = triangle->V0();
+					R3Point vp0 = v0->Position();
+					R2Point p0(vp0.Z(), vp0.X());
+					if (!R2Contains(grid.WorldBox(), p0)) continue;
+					R3TriangleVertex *v1 = triangle->V1();
+					R3Point vp1 = v1->Position();
+					R2Point p1(vp1.Z(), vp1.X());
+					if (!R2Contains(grid.WorldBox(), p1)) continue;
+					R3TriangleVertex *v2 = triangle->V2();
+					R3Point vp2 = v2->Position();
+					R2Point p2(vp2.Z(), vp2.X());
+					if (!R2Contains(grid.WorldBox(), p2)) continue;
+					grid.RasterizeWorldTriangle(p0, p1, p2, 1.0);
+				}
+			}
 		}
-		}
-	}
 	}
 
 	// Rasterize children into grid
 	for (int j = 0; j < node->NChildren(); j++) {
-	R3SceneNode *child = node->Child(j);
-	RasterizeIntoZXGrid(grid, child, world_bbox);
+		R3SceneNode *child = node->Child(j);
+		RasterizeIntoZXGrid(grid, child, world_bbox);
 	}
 }
 
@@ -958,16 +958,16 @@ ComputeViewpointMask(R3SceneNode *room_node, R2Grid& mask)
 
 	// Rasterize objects associated with this room into object mask
 	for (int i = 0; i < room_node->NChildren(); i++) {
-	R3SceneNode *node = room_node->Child(i);
-	if ((node == floor_node) || (node == ceiling_node)) continue;
-	RasterizeIntoZXGrid(object_mask, node, object_bbox);
+		R3SceneNode *node = room_node->Child(i);
+		if ((node == floor_node) || (node == ceiling_node)) continue;
+		RasterizeIntoZXGrid(object_mask, node, object_bbox);
 	}
 
 	// Rasterize objects associated with no room into object mask
 	for (int i = 0; i < room_node->Parent()->NChildren(); i++) {
-	R3SceneNode *node = room_node->Parent()->Child(i);
-	if (node->NChildren() > 0) continue;
-	RasterizeIntoZXGrid(object_mask, node, object_bbox);
+		R3SceneNode *node = room_node->Parent()->Child(i);
+		if (node->NChildren() > 0) continue;
+		RasterizeIntoZXGrid(object_mask, node, object_bbox);
 	}
 
 	// Reverse object mask to by 1 in areas not occupied by objects
@@ -975,7 +975,7 @@ ComputeViewpointMask(R3SceneNode *room_node, R2Grid& mask)
 
 	// Erode object mask to cover viewpoints at least min_distance_from_obstacle
 	if (min_distance_from_obstacle > 0) {
-	object_mask.Erode(min_distance_from_obstacle / grid_sample_spacing);
+		object_mask.Erode(min_distance_from_obstacle / grid_sample_spacing);
 	}
 
 	// Combine the two masks
@@ -1049,10 +1049,10 @@ CreateObjectCameras(void)
 			if (node->Parent() && node->Parent()->Parent()) {
 				if (node->Parent()->Parent()->Name()) {
 					if (strstr(node->Parent()->Parent()->Name(), "Room") || strstr(node->Parent()->Parent()->Name(), "Level")) {
-					R3Point floor = node->Parent()->Parent()->Centroid();
-					floor[1] = node->Parent()->Parent()->BBox().YMin();
-					viewpoint[1] = floor[1] + eye_height;
-					viewpoint[1] += 2.0*(RNRandomScalar()-0.5) * eye_height_radius;
+						R3Point floor = node->Parent()->Parent()->Centroid();
+						floor[1] = node->Parent()->Parent()->BBox().YMin();
+						viewpoint[1] = floor[1] + eye_height;
+						viewpoint[1] += 2.0*(RNRandomScalar()-0.5) * eye_height_radius;
 					}
 				}
 			}
@@ -1063,7 +1063,7 @@ CreateObjectCameras(void)
 			R3Ray ray(centroid, back);
 			RNScalar hit_t = FLT_MAX;
 			if (scene->Intersects(ray, NULL, NULL, NULL, NULL, NULL, &hit_t, min_distance, max_distance)) {
-			viewpoint = centroid + (hit_t - min_distance_from_obstacle) * back;
+				viewpoint = centroid + (hit_t - min_distance_from_obstacle) * back;
 			}
 
 			// Compute camera
@@ -1082,7 +1082,7 @@ CreateObjectCameras(void)
 
 			// Remember best camera
 			if (camera.Value() > best_camera.Value()) {
-			best_camera = camera;
+				best_camera = camera;
 			}
 		}
 
@@ -1200,10 +1200,10 @@ CreateRoomCameras(void)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Created room cameras ...\n");
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", camera_count++);
-	fflush(stdout);
+		printf("Created room cameras ...\n");
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", camera_count++);
+		fflush(stdout);
 	}
 }
 
@@ -1229,53 +1229,53 @@ CreateWorldInHandCameras(void)
 	// Determine number of cameras
 	int ncameras = 0;
 	if (position_sampling > 0) {
-	RNArea area_of_viewpoint_sphere = 4.0 * RN_PI * distance * distance;
-	RNScalar area_per_camera = 4.0 * position_sampling * position_sampling;
-	int position_ncameras = (int) (area_of_viewpoint_sphere / area_per_camera + 0.5);
-	if (position_ncameras > ncameras) ncameras = position_ncameras;
+		RNArea area_of_viewpoint_sphere = 4.0 * RN_PI * distance * distance;
+		RNScalar area_per_camera = 4.0 * position_sampling * position_sampling;
+		int position_ncameras = (int) (area_of_viewpoint_sphere / area_per_camera + 0.5);
+		if (position_ncameras > ncameras) ncameras = position_ncameras;
 	}
 	if (angle_sampling > 0) {
-	RNArea area_of_viewpoint_sphere = 4.0 * RN_PI * distance * distance;
-	RNScalar arc_length = (distance * angle_sampling);
-	RNScalar area_per_camera = arc_length * arc_length;
-	int angle_ncameras = (int) (area_of_viewpoint_sphere / area_per_camera + 0.5);
-	if (angle_ncameras > ncameras) ncameras = angle_ncameras;
+		RNArea area_of_viewpoint_sphere = 4.0 * RN_PI * distance * distance;
+		RNScalar arc_length = (distance * angle_sampling);
+		RNScalar area_per_camera = arc_length * arc_length;
+		int angle_ncameras = (int) (area_of_viewpoint_sphere / area_per_camera + 0.5);
+		if (angle_ncameras > ncameras) ncameras = angle_ncameras;
 	}
 	if (ncameras == 0) ncameras = 1024;
 
 	// Create cameras at random directions from viewpoint sphere looking at centroid
 	for (int i = 0; i < ncameras; i++) {
-	// Compute view directions
-	R3Vector towards = R3RandomDirection();
-	towards.Normalize();
-	R3Vector right = towards % R3posy_vector;
-	if (RNIsZero(right.Length())) continue;
-	right.Normalize();
-	R3Vector up = right % towards;
-	if (RNIsZero(up.Length())) continue;
-	up.Normalize();
+		// Compute view directions
+		R3Vector towards = R3RandomDirection();
+		towards.Normalize();
+		R3Vector right = towards % R3posy_vector;
+		if (RNIsZero(right.Length())) continue;
+		right.Normalize();
+		R3Vector up = right % towards;
+		if (RNIsZero(up.Length())) continue;
+		up.Normalize();
 
-	// Compute eyepoint
-	RNScalar d = distance + (2.0*RNRandomScalar()-1.0) * position_sampling;
-	R3Point viewpoint = centroid - d * towards;
+		// Compute eyepoint
+		RNScalar d = distance + (2.0*RNRandomScalar()-1.0) * position_sampling;
+		R3Point viewpoint = centroid - d * towards;
 
-	// Compute name
-	char name[1024];
-	sprintf(name, "WORLDINHAND#%d", i);
+		// Compute name
+		char name[1024];
+		sprintf(name, "WORLDINHAND#%d", i);
 
-	// Create camera
-	R3Camera c(viewpoint, towards, up, xfov, yfov, neardist, fardist);
-	Camera *camera = new Camera(c, name);
-	cameras.Insert(camera);
-	camera_count++;
+		// Create camera
+		R3Camera c(viewpoint, towards, up, xfov, yfov, neardist, fardist);
+		Camera *camera = new Camera(c, name);
+		cameras.Insert(camera);
+		camera_count++;
 	}
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Created world in hand cameras ...\n");
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", camera_count++);
-	fflush(stdout);
+		printf("Created world in hand cameras ...\n");
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", camera_count++);
+		fflush(stdout);
 	}
 }
 
@@ -1305,12 +1305,12 @@ InterpolateCameraTrajectory(RNLength trajectory_step = 0.1)
 	R3Point *up_keypoints =  new R3Point [ nkeypoints ];
 	RNScalar *parameters = new RNScalar [ nkeypoints ];
 	for (int i = 0; i < cameras.NEntries(); i++) {
-	R3Camera *camera = cameras.Kth(i);
-	viewpoint_keypoints[i] = camera->Origin();
-	towards_keypoints[i] = camera->Towards().Point();
-	up_keypoints[i] = camera->Up().Point();
-	if (i == 0) parameters[i] = 0;
-	else parameters[i] = parameters[i-1] + R3Distance(viewpoint_keypoints[i], viewpoint_keypoints[i-1]) + R3InteriorAngle(towards_keypoints[i].Vector(), towards_keypoints[i-1].Vector());
+		R3Camera *camera = cameras.Kth(i);
+		viewpoint_keypoints[i] = camera->Origin();
+		towards_keypoints[i] = camera->Towards().Point();
+		up_keypoints[i] = camera->Up().Point();
+		if (i == 0) parameters[i] = 0;
+		else parameters[i] = parameters[i-1] + R3Distance(viewpoint_keypoints[i], viewpoint_keypoints[i-1]) + R3InteriorAngle(towards_keypoints[i].Vector(), towards_keypoints[i-1].Vector());
 	}
 
 	// Create splines
@@ -1324,14 +1324,14 @@ InterpolateCameraTrajectory(RNLength trajectory_step = 0.1)
 
 	// Resample splines
 	for (RNScalar u = viewpoint_spline.StartParameter(); u <= viewpoint_spline.EndParameter(); u += trajectory_step) {
-	R3Point viewpoint = viewpoint_spline.PointPosition(u);
-	R3Point towards = towards_spline.PointPosition(u);
-	R3Point up = up_spline.PointPosition(u);
-	Camera *camera = new Camera(viewpoint, towards.Vector(), up.Vector(), xf, yf, neardist, fardist);
-	char name[1024];
-	sprintf(name, "T%f", u);
-	camera->name = strdup(name);
-	cameras.Insert(camera);
+		R3Point viewpoint = viewpoint_spline.PointPosition(u);
+		R3Point towards = towards_spline.PointPosition(u);
+		R3Point up = up_spline.PointPosition(u);
+		Camera *camera = new Camera(viewpoint, towards.Vector(), up.Vector(), xf, yf, neardist, fardist);
+		char name[1024];
+		sprintf(name, "T%f", u);
+		camera->name = strdup(name);
+		cameras.Insert(camera);
 	}
 
 	// Delete spline data
@@ -1342,10 +1342,10 @@ InterpolateCameraTrajectory(RNLength trajectory_step = 0.1)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Interpolated camera trajectory ...\n");
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", cameras.NEntries());
-	fflush(stdout);
+		printf("Interpolated camera trajectory ...\n");
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", cameras.NEntries());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -1370,10 +1370,10 @@ SortCameras(void)
 
 	// Print statistics
 	if (print_verbose) {
-	printf("Sorted cameras ...\n");
-	printf("  Time = %.2f seconds\n", start_time.Elapsed());
-	printf("  # Cameras = %d\n", cameras.NEntries());
-	fflush(stdout);
+		printf("Sorted cameras ...\n");
+		printf("  Time = %.2f seconds\n", start_time.Elapsed());
+		printf("  # Cameras = %d\n", cameras.NEntries());
+		fflush(stdout);
 	}
 
 	// Return success
@@ -1390,16 +1390,15 @@ static void
 CreateAndWriteCameras(void)
 {
 	// Create cameras
-	if (create_object_cameras) CreateObjectCameras();
-	if (create_room_cameras) CreateRoomCameras();
-	if (create_world_in_hand_cameras) CreateWorldInHandCameras();
+	//CreateObjectCameras();
+	CreateRoomCameras();
+	//CreateWorldInHandCameras();
 
 	// Create trajectory from cameras
 	if (interpolate_camera_trajectory) {
-	if (!InterpolateCameraTrajectory(interpolation_step)) exit(-1);
-	}
-	else {
-	SortCameras();
+		if (!InterpolateCameraTrajectory(interpolation_step)) exit(-1);
+	} else {
+		SortCameras();
 	}
 
 	// Write cameras
@@ -1449,21 +1448,21 @@ CreateAndWriteCamerasWithMesa(void)
 	// Create mesa context
 	OSMesaContext ctx = OSMesaCreateContextExt(OSMESA_RGBA, 32, 0, 0, NULL);
 	if (!ctx) {
-	fprintf(stderr, "Unable to create mesa context\n");
-	return 0;
+		fprintf(stderr, "Unable to create mesa context\n");
+		return 0;
 	}
 
 	// Create frame buffer
 	void *frame_buffer = malloc(width * height * 4 * sizeof(GLubyte) );
 	if (!frame_buffer) {
-	fprintf(stderr, "Unable to allocate mesa frame buffer\n");
-	return 0;
+		fprintf(stderr, "Unable to allocate mesa frame buffer\n");
+		return 0;
 	}
 
 	// Assign mesa context
 	if (!OSMesaMakeCurrent(ctx, frame_buffer, GL_UNSIGNED_BYTE, width, height)) {
-	fprintf(stderr, "Unable to make mesa context current\n");
-	return 0;
+		fprintf(stderr, "Unable to make mesa context current\n");
+		return 0;
 	}
 
 	// Create cameras
@@ -1500,66 +1499,65 @@ ParseArgs(int argc, char **argv)
 	// Parse arguments
 	argc--; argv++;
 	while (argc > 0) {
-	if ((*argv)[0] == '-') {
-		if (!strcmp(*argv, "-v")) print_verbose = 1;
-		else if (!strcmp(*argv, "-debug")) print_debug = 1;
-		else if (!strcmp(*argv, "-glut")) { mesa = 0; glut = 1; }
-		else if (!strcmp(*argv, "-mesa")) { mesa = 1; glut = 0; }
-		else if (!strcmp(*argv, "-raycast")) { mesa = 0; glut = 0; }
-		else if (!strcmp(*argv, "-categories")) { argc--; argv++; input_categories_filename = *argv; }
-		else if (!strcmp(*argv, "-input_cameras")) { argc--; argv++; input_cameras_filename = *argv; }
-		else if (!strcmp(*argv, "-output_camera_extrinsics")) { argc--; argv++; output_camera_extrinsics_filename = *argv; output = 1; }
-		else if (!strcmp(*argv, "-output_camera_intrinsics")) { argc--; argv++; output_camera_intrinsics_filename = *argv; output = 1; }
-		else if (!strcmp(*argv, "-output_camera_names")) { argc--; argv++; output_camera_names_filename = *argv; output = 1; }
-		else if (!strcmp(*argv, "-output_nodes")) { argc--; argv++; output_nodes_filename = *argv; output = 1; }
-		else if (!strcmp(*argv, "-interpolate_camera_trajectory")) { interpolate_camera_trajectory = 1; }
-		else if (!strcmp(*argv, "-width")) { argc--; argv++; width = atoi(*argv); }
-		else if (!strcmp(*argv, "-height")) { argc--; argv++; height = atoi(*argv); }
-		else if (!strcmp(*argv, "-xfov")) { argc--; argv++; xfov = atof(*argv); }
-		else if (!strcmp(*argv, "-eye_height")) { argc--; argv++; eye_height = atof(*argv); }
-		else if (!strcmp(*argv, "-eye_height_radius")) { argc--; argv++; eye_height_radius = atof(*argv); }
-		else if (!strcmp(*argv, "-min_distance_from_obstacle")) { argc--; argv++; min_distance_from_obstacle = atof(*argv); }
-		else if (!strcmp(*argv, "-min_visible_objects")) { argc--; argv++; min_visible_objects = atoi(*argv); }
-		else if (!strcmp(*argv, "-min_score")) { argc--; argv++; min_score = atof(*argv); }
-		else if (!strcmp(*argv, "-scene_scoring_method")) { argc--; argv++; scene_scoring_method = atoi(*argv); }
-		else if (!strcmp(*argv, "-object_scoring_method")) { argc--; argv++; object_scoring_method = atoi(*argv); }
-		else if (!strcmp(*argv, "-position_sampling")) { argc--; argv++; position_sampling = atof(*argv); }
-		else if (!strcmp(*argv, "-angle_sampling")) { argc--; argv++; angle_sampling = atof(*argv); }
-		else if (!strcmp(*argv, "-interpolation_step")) { argc--; argv++; interpolation_step = atof(*argv); }
-		else if (!strcmp(*argv, "-create_object_cameras") || !strcmp(*argv, "-create_leaf_node_cameras")) {
-		create_cameras = create_object_cameras = 1;
-		angle_sampling = RN_PI / 6.0;
+		if ((*argv)[0] == '-') {
+			if (!strcmp(*argv, "-v")) print_verbose = 1;
+			else if (!strcmp(*argv, "-debug")) print_debug = 1;
+			else if (!strcmp(*argv, "-glut")) { mesa = 0; glut = 1; }
+			else if (!strcmp(*argv, "-mesa")) { mesa = 1; glut = 0; }
+			else if (!strcmp(*argv, "-raycast")) { mesa = 0; glut = 0; }
+			else if (!strcmp(*argv, "-categories")) { argc--; argv++; input_categories_filename = *argv; }
+			else if (!strcmp(*argv, "-input_cameras")) { argc--; argv++; input_cameras_filename = *argv; }
+			else if (!strcmp(*argv, "-output_camera_extrinsics")) { argc--; argv++; output_camera_extrinsics_filename = *argv; output = 1; }
+			else if (!strcmp(*argv, "-output_camera_intrinsics")) { argc--; argv++; output_camera_intrinsics_filename = *argv; output = 1; }
+			else if (!strcmp(*argv, "-output_camera_names")) { argc--; argv++; output_camera_names_filename = *argv; output = 1; }
+			else if (!strcmp(*argv, "-output_nodes")) { argc--; argv++; output_nodes_filename = *argv; output = 1; }
+			else if (!strcmp(*argv, "-interpolate_camera_trajectory")) { interpolate_camera_trajectory = 1; }
+			else if (!strcmp(*argv, "-width")) { argc--; argv++; width = atoi(*argv); }
+			else if (!strcmp(*argv, "-height")) { argc--; argv++; height = atoi(*argv); }
+			else if (!strcmp(*argv, "-xfov")) { argc--; argv++; xfov = atof(*argv); }
+			else if (!strcmp(*argv, "-eye_height")) { argc--; argv++; eye_height = atof(*argv); }
+			else if (!strcmp(*argv, "-eye_height_radius")) { argc--; argv++; eye_height_radius = atof(*argv); }
+			else if (!strcmp(*argv, "-min_distance_from_obstacle")) { argc--; argv++; min_distance_from_obstacle = atof(*argv); }
+			else if (!strcmp(*argv, "-min_visible_objects")) { argc--; argv++; min_visible_objects = atoi(*argv); }
+			else if (!strcmp(*argv, "-min_score")) { argc--; argv++; min_score = atof(*argv); }
+			else if (!strcmp(*argv, "-scene_scoring_method")) { argc--; argv++; scene_scoring_method = atoi(*argv); }
+			else if (!strcmp(*argv, "-object_scoring_method")) { argc--; argv++; object_scoring_method = atoi(*argv); }
+			else if (!strcmp(*argv, "-position_sampling")) { argc--; argv++; position_sampling = atof(*argv); }
+			else if (!strcmp(*argv, "-angle_sampling")) { argc--; argv++; angle_sampling = atof(*argv); }
+			else if (!strcmp(*argv, "-interpolation_step")) { argc--; argv++; interpolation_step = atof(*argv); }
+			else if (!strcmp(*argv, "-create_object_cameras") || !strcmp(*argv, "-create_leaf_node_cameras")) {
+				create_cameras = create_object_cameras = 1;
+				angle_sampling = RN_PI / 6.0;
+			}
+			else if (!strcmp(*argv, "-create_room_cameras")) {
+				create_cameras = create_room_cameras = 1;
+				angle_sampling = RN_PI / 2.0;
+			}
+			else if (!strcmp(*argv, "-create_world_in_hand_cameras")) {
+				create_cameras = create_world_in_hand_cameras = 1;
+			}
+			else {
+				fprintf(stderr, "Invalid program argument: %s", *argv);
+				exit(1);
+			}
+			argv++; argc--;
+		} else {
+			if (!input_scene_filename) input_scene_filename = *argv;
+			else if (!output_cameras_filename) { output_cameras_filename = *argv; output = 1; }
+			else { fprintf(stderr, "Invalid program argument: %s", *argv); exit(1); }
+			argv++; argc--;
 		}
-		else if (!strcmp(*argv, "-create_room_cameras")) {
-		create_cameras = create_room_cameras = 1;
-		angle_sampling = RN_PI / 2.0;
-		}
-		else if (!strcmp(*argv, "-create_world_in_hand_cameras")) {
-		create_cameras = create_world_in_hand_cameras = 1;
-		}
-		else {
-		fprintf(stderr, "Invalid program argument: %s", *argv);
-		exit(1);
-		}
-		argv++; argc--;
-	}
-	else {
-		if (!input_scene_filename) input_scene_filename = *argv;
-		else if (!output_cameras_filename) { output_cameras_filename = *argv; output = 1; }
-		else { fprintf(stderr, "Invalid program argument: %s", *argv); exit(1); }
-		argv++; argc--;
-	}
 	}
 
 	// Set default camera options
 	if (!input_cameras_filename && !create_cameras) {
-	create_room_cameras = 1;
+		create_room_cameras = 1;
 	}
 
 	// Check filenames
 	if (!input_scene_filename || !output) {
-	fprintf(stderr, "Usage: scn2cam inputscenefile outputcamerafile\n");
-	return 0;
+		fprintf(stderr, "Usage: scn2cam inputscenefile outputcamerafile\n");
+		return 0;
 	}
 
 	// Return OK status
@@ -1582,12 +1580,12 @@ int main(int argc, char **argv)
 
 	// Read cameras
 	if (input_cameras_filename) {
-	if (!ReadCameras(input_cameras_filename)) exit(-1);
+		if (!ReadCameras(input_cameras_filename)) exit(-1);
 	}
 
 	// Read categories
 	if (input_categories_filename) {
-	if (!ReadCategories(input_categories_filename)) exit(-1);
+		if (!ReadCategories(input_categories_filename)) exit(-1);
 	}
 
 	// Create and write new cameras
